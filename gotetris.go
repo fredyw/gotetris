@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"github.com/nsf/termbox-go"
 	"os"
+	"sort"
 )
 
 const (
@@ -43,6 +44,8 @@ type coordinate struct {
 }
 
 type block struct {
+	topLeft     coordinate
+	topRight    coordinate
 	coordinates []coordinate
 }
 
@@ -50,28 +53,23 @@ type game struct {
 	block block
 }
 
-//public static char[][] rotate(char[][] block) {
-//int rowSize = block.length;
-//int colSize = block[0].length;
-//
-//// tranpose the matrix
-//char[][] result = new char[colSize][rowSize];
-//for (int i = 0; i < rowSize; i++) {
-//for (int j = 0; j < colSize; j++) {
-//result[j][i] = block[i][j];
-//}
-//}
-//// reverse the rows
-//for (int i = 0; i < result.length; i++) {
-//for (int j = 0, k = result[i].length - 1; j < result[i].length / 2; j++, k--) {
-//char tmp = result[i][k];
-//result[i][k] = result[i][j];
-//result[i][j] = tmp;
-//}
-//}
-//
-//return result;
-//}
+type sortByX []coordinate
+
+func (sbx sortByX) Len() int {
+	return len(sbx)
+}
+
+func (sbx sortByX) Swap(i, j int) {
+	sbx[i], sbx[j] = sbx[j], sbx[i]
+}
+
+func (sbx sortByX) Less(i, j int) bool {
+	return sbx[i].x < sbx[j].x
+}
+
+func (b *block) sortX() {
+	sort.Sort(sortByX(b.coordinates))
+}
 
 func (b *block) moveLeft() {
 	for i, _ := range b.coordinates {
@@ -95,6 +93,31 @@ func (b *block) moveDown() {
 			b.coordinates[i].y += yStep
 		}
 	}
+}
+
+func (b *block) rotate() {
+	//fmt.Println("before transpose: ", b.coordinates)
+	newCoordinates := []coordinate{}
+	// transpose the x and y coordinates
+	for _, coord := range b.coordinates {
+		newX := coord.y
+		newY := coord.x
+		newCoordinates = append(newCoordinates, coordinate{newX, newY})
+	}
+	sort.Sort(sortByX(newCoordinates))
+	//fmt.Println("after transpose: ", newCoordinates)
+	// reverse the x coordinates
+	// TODO: incorrect algorithm
+	xSize := b.topRight.x - b.topLeft.x
+	for i := 0; i < len(newCoordinates); i++ {
+		newX := newCoordinates[i].x + xSize
+		if newX > b.topRight.x {
+			newX = b.topLeft.x + (newX - b.topRight.x - 1)
+		}
+		newCoordinates[i].x = newX
+	}
+	//fmt.Println("after reverse:", newCoordinates)
+	b.coordinates = newCoordinates
 }
 
 func drawTopLine() {
@@ -152,9 +175,20 @@ func drawBox() {
 
 func drawBlock(block *block) {
 	colorDefault := termbox.ColorDefault
+	coordMap := map[int]int{}
+	i := 0
+	block.sortX()
 	for _, coord := range block.coordinates {
 		c := '*'
-		termbox.SetCell(coord.x, coord.y, c, colorDefault, colorDefault)
+		xCoord := coord.x
+		if val, ok := coordMap[xCoord]; ok {
+			xCoord = val
+		} else {
+			xCoord += i
+			i++
+		}
+		coordMap[coord.x] = xCoord
+		termbox.SetCell(xCoord, coord.y, c, colorDefault, colorDefault)
 	}
 }
 
@@ -184,11 +218,17 @@ func runGame() {
 
 	game := &game{
 		block: block{
-			[]coordinate{
-				{2, 3},
-				{4, 3},
-				{6, 3},
+			topLeft:  coordinate{4, 4},
+			topRight: coordinate{6, 6},
+			coordinates: []coordinate{
+				{6, 5},
+				{5, 4},
 				{6, 4},
+				{4, 4},
+				//{6, 4},
+				//{6, 5},
+				//{6, 6},
+				//{5, 6},
 			},
 		},
 	}
@@ -208,6 +248,8 @@ exitGame:
 					game.block.moveRight()
 				case termbox.KeyArrowDown:
 					game.block.moveDown()
+				case termbox.KeySpace:
+					game.block.rotate()
 				}
 			}
 			redrawAll(game)
