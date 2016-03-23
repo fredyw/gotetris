@@ -214,14 +214,26 @@ func runGame() {
 	game := &game{
 		coordinates: [][]coordinate{
 			{
-				{4, 4, false}, {4, 5, false}, {4, 6, false},
+				{4, 4, false}, {4, 5, false}, {4, 6, true},
 			},
 			{
 				{5, 4, true}, {5, 5, true}, {5, 6, true},
 			},
 			{
-				{6, 4, false}, {6, 5, false}, {6, 6, true},
+				{6, 4, false}, {6, 5, false}, {6, 6, false},
 			},
+			//{
+			//	{4, 4, false}, {4, 5, false}, {4, 6, false}, {4, 7, false},
+			//},
+			//{
+			//	{5, 4, true}, {5, 5, true}, {5, 6, true}, {5, 7, true},
+			//},
+			//{
+			//	{6, 4, false}, {6, 5, false}, {6, 6, false}, {6, 7, false},
+			//},
+			//{
+			//	{7, 4, false}, {7, 5, false}, {7, 6, false}, {7, 7, false},
+			//},
 		},
 	}
 
