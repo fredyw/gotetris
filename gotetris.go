@@ -62,7 +62,7 @@ func (g *game) moveLeft() {
 
 func (g *game) moveRight() {
 	for row := 0; row < len(g.coordinates); row++ {
-		for col := 0; col < len(g.coordinates[row]); col++ {
+		for col := len(g.coordinates[row]) - 1; col >= 0; col-- {
 			x := g.coordinates[row][col].x
 			if x+xStep < rightX-1 {
 				g.coordinates[row][col].x += xStep
@@ -74,13 +74,14 @@ func (g *game) moveRight() {
 }
 
 func (g *game) moveDown() {
-	for row := 0; row < len(g.coordinates); row++ {
+outer:
+	for row := len(g.coordinates) - 1; row >= 0; row-- {
 		for col := 0; col < len(g.coordinates[row]); col++ {
 			y := g.coordinates[row][col].y
-			if y+yStep < rightY {
+			if y+yStep <= rightY {
 				g.coordinates[row][col].y += yStep
 			} else {
-				break
+				break outer
 			}
 		}
 	}
@@ -139,7 +140,7 @@ func drawLeftLine() {
 	}
 }
 
-func drawRightLine() {
+func drawBottomLine() {
 	colorDefault := termbox.ColorDefault
 	for i := leftX; i <= rightX; i++ {
 		var c rune
@@ -154,7 +155,7 @@ func drawRightLine() {
 	}
 }
 
-func drawBottomLine() {
+func drawRightLine() {
 	colorDefault := termbox.ColorDefault
 	for i := leftY + 1; i <= rightY; i++ {
 		c := '\u2502'
@@ -191,8 +192,8 @@ func redrawAll(game *game) {
 	colorDefault := termbox.ColorDefault
 	termbox.Clear(colorDefault, colorDefault)
 
-	drawBox()
 	drawBlock(game)
+	drawBox()
 
 	termbox.Flush()
 }
