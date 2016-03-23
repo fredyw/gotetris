@@ -25,99 +25,95 @@ import (
 	"fmt"
 	"github.com/nsf/termbox-go"
 	"os"
-	"sort"
 )
 
 const (
 	author string = "Fredy Wijaya"
 	leftX  int    = 1
 	leftY  int    = 1
-	rightX int    = 20
+	rightX int    = 21
 	rightY int    = 20
 	xStep  int    = 2
 	yStep  int    = 1
 )
 
 type coordinate struct {
-	x int
-	y int
-}
-
-type block struct {
-	topLeft     coordinate
-	topRight    coordinate
-	coordinates []coordinate
+	y      int
+	x      int
+	filled bool
 }
 
 type game struct {
-	block block
+	coordinates [][]coordinate
 }
 
-type sortByX []coordinate
-
-func (sbx sortByX) Len() int {
-	return len(sbx)
-}
-
-func (sbx sortByX) Swap(i, j int) {
-	sbx[i], sbx[j] = sbx[j], sbx[i]
-}
-
-func (sbx sortByX) Less(i, j int) bool {
-	return sbx[i].x < sbx[j].x
-}
-
-func (b *block) sortX() {
-	sort.Sort(sortByX(b.coordinates))
-}
-
-func (b *block) moveLeft() {
-	for i, _ := range b.coordinates {
-		if b.coordinates[i].x-xStep > leftX {
-			b.coordinates[i].x -= xStep
+func (g *game) moveLeft() {
+	for row := 0; row < len(g.coordinates); row++ {
+		for col := 0; col < len(g.coordinates[row]); col++ {
+			x := g.coordinates[row][col].x
+			if x-xStep > leftX {
+				g.coordinates[row][col].x -= xStep
+			} else {
+				break
+			}
 		}
 	}
 }
 
-func (b *block) moveRight() {
-	for i, _ := range b.coordinates {
-		if b.coordinates[i].x+xStep < rightX {
-			b.coordinates[i].x += xStep
+func (g *game) moveRight() {
+	for row := 0; row < len(g.coordinates); row++ {
+		for col := 0; col < len(g.coordinates[row]); col++ {
+			x := g.coordinates[row][col].x
+			if x+xStep < rightX-1 {
+				g.coordinates[row][col].x += xStep
+			} else {
+				break
+			}
 		}
 	}
 }
 
-func (b *block) moveDown() {
-	for i, _ := range b.coordinates {
-		if b.coordinates[i].y+yStep < rightY {
-			b.coordinates[i].y += yStep
+func (g *game) moveDown() {
+	for row := 0; row < len(g.coordinates); row++ {
+		for col := 0; col < len(g.coordinates[row]); col++ {
+			y := g.coordinates[row][col].y
+			if y+yStep < rightY {
+				g.coordinates[row][col].y += yStep
+			} else {
+				break
+			}
 		}
 	}
 }
 
-func (b *block) rotate() {
-	//fmt.Println("before transpose: ", b.coordinates)
-	newCoordinates := []coordinate{}
-	// transpose the x and y coordinates
-	for _, coord := range b.coordinates {
-		newX := coord.y
-		newY := coord.x
-		newCoordinates = append(newCoordinates, coordinate{newX, newY})
-	}
-	sort.Sort(sortByX(newCoordinates))
-	//fmt.Println("after transpose: ", newCoordinates)
-	// reverse the x coordinates
-	// TODO: incorrect algorithm
-	xSize := b.topRight.x - b.topLeft.x
-	for i := 0; i < len(newCoordinates); i++ {
-		newX := newCoordinates[i].x + xSize
-		if newX > b.topRight.x {
-			newX = b.topLeft.x + (newX - b.topRight.x - 1)
+func (g *game) rotate() {
+	// transpose
+	tmpCoordinates := [][]coordinate{}
+	for row := 0; row < len(g.coordinates); row++ {
+		tmpCoordinates = append(tmpCoordinates, []coordinate{})
+		for col := 0; col < len(g.coordinates[row]); col++ {
+			tmpCoordinates[row] = append(tmpCoordinates[row], g.coordinates[col][row])
 		}
-		newCoordinates[i].x = newX
 	}
-	//fmt.Println("after reverse:", newCoordinates)
-	b.coordinates = newCoordinates
+
+	for row := 0; row < len(g.coordinates); row++ {
+		for col := 0; col < len(g.coordinates[row]); col++ {
+			g.coordinates[row][col].filled = tmpCoordinates[row][col].filled
+		}
+	}
+
+	// reverse
+	for row := 0; row < len(g.coordinates); row++ {
+		lcol := 0
+		rcol := len(g.coordinates[row]) - 1
+		for lcol < len(g.coordinates[row])/2 {
+			tmp := g.coordinates[row][rcol].filled
+			g.coordinates[row][rcol].filled = g.coordinates[row][lcol].filled
+			g.coordinates[row][lcol].filled = tmp
+			lcol++
+			rcol--
+		}
+	}
 }
 
 func drawTopLine() {
@@ -173,22 +169,21 @@ func drawBox() {
 	drawBottomLine()
 }
 
-func drawBlock(block *block) {
+func drawBlock(g *game) {
 	colorDefault := termbox.ColorDefault
-	coordMap := map[int]int{}
-	i := 0
-	block.sortX()
-	for _, coord := range block.coordinates {
-		c := '*'
-		xCoord := coord.x
-		if val, ok := coordMap[xCoord]; ok {
-			xCoord = val
-		} else {
-			xCoord += i
-			i++
+	for row := 0; row < len(g.coordinates); row++ {
+		step := 0
+		for col := 0; col < len(g.coordinates[row]); col++ {
+			c := '*'
+			filled := g.coordinates[row][col].filled
+			if !filled {
+				c = ' '
+			}
+			x := g.coordinates[row][col].x + step
+			y := g.coordinates[row][col].y
+			step++
+			termbox.SetCell(x, y, c, colorDefault, colorDefault)
 		}
-		coordMap[coord.x] = xCoord
-		termbox.SetCell(xCoord, coord.y, c, colorDefault, colorDefault)
 	}
 }
 
@@ -197,7 +192,7 @@ func redrawAll(game *game) {
 	termbox.Clear(colorDefault, colorDefault)
 
 	drawBox()
-	drawBlock(&game.block)
+	drawBlock(game)
 
 	termbox.Flush()
 }
@@ -217,18 +212,15 @@ func runGame() {
 	}()
 
 	game := &game{
-		block: block{
-			topLeft:  coordinate{4, 4},
-			topRight: coordinate{6, 6},
-			coordinates: []coordinate{
-				{6, 5},
-				{5, 4},
-				{6, 4},
-				{4, 4},
-				//{6, 4},
-				//{6, 5},
-				//{6, 6},
-				//{5, 6},
+		coordinates: [][]coordinate{
+			{
+				{4, 4, false}, {4, 5, false}, {4, 6, false},
+			},
+			{
+				{5, 4, true}, {5, 5, true}, {5, 6, true},
+			},
+			{
+				{6, 4, false}, {6, 5, false}, {6, 6, true},
 			},
 		},
 	}
@@ -243,13 +235,13 @@ exitGame:
 				case termbox.KeyEsc:
 					break exitGame
 				case termbox.KeyArrowLeft:
-					game.block.moveLeft()
+					game.moveLeft()
 				case termbox.KeyArrowRight:
-					game.block.moveRight()
+					game.moveRight()
 				case termbox.KeyArrowDown:
-					game.block.moveDown()
+					game.moveDown()
 				case termbox.KeySpace:
-					game.block.rotate()
+					game.rotate()
 				}
 			}
 			redrawAll(game)
