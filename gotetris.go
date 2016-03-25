@@ -30,11 +30,11 @@ import (
 
 const (
 	author string = "Fredy Wijaya"
-	leftX  int    = 1
-	leftY  int    = 1
-	rightX int    = 21
+	leftX  int    = 2
+	leftY  int    = 0
+	rightX int    = 22
 	rightY int    = 20
-	xStep  int    = 2
+	xStep  int    = 1
 	yStep  int    = 1
 )
 
@@ -49,40 +49,57 @@ type game struct {
 }
 
 func (g *game) moveLeft() {
+	revert := false
 	for row := 0; row < len(g.coordinates); row++ {
 		for col := 0; col < len(g.coordinates[row]); col++ {
-			x := g.coordinates[row][col].x
-			if x-xStep > leftX {
-				g.coordinates[row][col].x -= xStep
-			} else {
-				break
+			g.coordinates[row][col].x -= xStep
+			if g.coordinates[row][col].x <= leftX && g.coordinates[row][col].filled {
+				revert = true
+			}
+		}
+	}
+	if revert {
+		for row := 0; row < len(g.coordinates); row++ {
+			for col := 0; col < len(g.coordinates[row]); col++ {
+				g.coordinates[row][col].x += xStep
 			}
 		}
 	}
 }
 
 func (g *game) moveRight() {
+	revert := false
 	for row := 0; row < len(g.coordinates); row++ {
 		for col := len(g.coordinates[row]) - 1; col >= 0; col-- {
-			x := g.coordinates[row][col].x
-			if x+xStep < rightX-1 {
-				g.coordinates[row][col].x += xStep
-			} else {
-				break
+			g.coordinates[row][col].x += xStep
+			if g.coordinates[row][col].x >= rightX && g.coordinates[row][col].filled {
+				revert = true
+			}
+		}
+	}
+	if revert {
+		for row := 0; row < len(g.coordinates); row++ {
+			for col := 0; col < len(g.coordinates[row]); col++ {
+				g.coordinates[row][col].x -= xStep
 			}
 		}
 	}
 }
 
 func (g *game) moveDown() {
-outer:
-	for row := len(g.coordinates) - 1; row >= 0; row-- {
+	revert := false
+	for row := 0; row < len(g.coordinates); row++ {
 		for col := 0; col < len(g.coordinates[row]); col++ {
-			y := g.coordinates[row][col].y
-			if y+yStep <= rightY {
-				g.coordinates[row][col].y += yStep
-			} else {
-				break outer
+			g.coordinates[row][col].y += yStep
+			if g.coordinates[row][col].y >= rightY && g.coordinates[row][col].filled {
+				revert = true
+			}
+		}
+	}
+	if revert {
+		for row := 0; row < len(g.coordinates); row++ {
+			for col := 0; col < len(g.coordinates[row]); col++ {
+				g.coordinates[row][col].y -= yStep
 			}
 		}
 	}
@@ -152,7 +169,7 @@ func drawBottomLine() {
 		} else {
 			c = '\u2500'
 		}
-		termbox.SetCell(i, rightY+1, c, colorDefault, colorDefault)
+		termbox.SetCell(i, rightY, c, colorDefault, colorDefault)
 	}
 }
 
@@ -174,16 +191,14 @@ func drawBox() {
 func drawBlock(g *game) {
 	colorDefault := termbox.ColorDefault
 	for row := 0; row < len(g.coordinates); row++ {
-		step := 0
 		for col := 0; col < len(g.coordinates[row]); col++ {
-			c := '*'
+			c := '\u2588'
 			filled := g.coordinates[row][col].filled
 			if !filled {
 				c = ' '
 			}
-			x := g.coordinates[row][col].x + step
+			x := g.coordinates[row][col].x
 			y := g.coordinates[row][col].y
-			step++
 			termbox.SetCell(x, y, c, colorDefault, colorDefault)
 		}
 	}
@@ -215,15 +230,15 @@ func runGame() {
 
 	game := &game{
 		coordinates: [][]coordinate{
-			{
-				{4, 4, false}, {4, 5, false}, {4, 6, true},
-			},
-			{
-				{5, 4, true}, {5, 5, true}, {5, 6, true},
-			},
-			{
-				{6, 4, false}, {6, 5, false}, {6, 6, false},
-			},
+			//{
+			//	{4, 4, false}, {4, 5, false}, {4, 6, true},
+			//},
+			//{
+			//	{5, 4, true}, {5, 5, true}, {5, 6, true},
+			//},
+			//{
+			//	{6, 4, false}, {6, 5, false}, {6, 6, false},
+			//},
 			//{
 			//	{4, 4, false}, {4, 5, false}, {4, 6, false}, {4, 7, false},
 			//},
@@ -236,6 +251,19 @@ func runGame() {
 			//{
 			//	{7, 4, false}, {7, 5, false}, {7, 6, false}, {7, 7, false},
 			//},
+
+			{
+				{4, 4, false}, {4, 6, false}, {4, 8, false}, {4, 10, false},
+			},
+			{
+				{5, 4, true}, {5, 6, true}, {5, 8, true}, {5, 10, true},
+			},
+			{
+				{6, 4, false}, {6, 6, false}, {6, 8, false}, {6, 10, false},
+			},
+			{
+				{7, 4, false}, {7, 6, false}, {7, 8, false}, {7, 10, false},
+			},
 		},
 	}
 
