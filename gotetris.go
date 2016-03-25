@@ -72,7 +72,7 @@ func (g *game) moveRight() {
 	for row := 0; row < len(g.coordinates); row++ {
 		for col := len(g.coordinates[row]) - 1; col >= 0; col-- {
 			g.coordinates[row][col].x += xStep
-			if g.coordinates[row][col].x >= rightX && g.coordinates[row][col].filled {
+			if g.coordinates[row][col].x+1 >= rightX && g.coordinates[row][col].filled {
 				revert = true
 			}
 		}
@@ -200,6 +200,9 @@ func drawBlock(g *game) {
 			x := g.coordinates[row][col].x
 			y := g.coordinates[row][col].y
 			termbox.SetCell(x, y, c, colorDefault, colorDefault)
+			//if col != len(g.coordinates[row])-1 {
+			termbox.SetCell(x+1, y, c, colorDefault, colorDefault)
+			//}
 		}
 	}
 }
@@ -231,25 +234,13 @@ func runGame() {
 	game := &game{
 		coordinates: [][]coordinate{
 			//{
-			//	{4, 4, false}, {4, 5, false}, {4, 6, true},
+			//	{4, 4, false}, {4, 6, false}, {4, 8, true},
 			//},
 			//{
-			//	{5, 4, true}, {5, 5, true}, {5, 6, true},
+			//	{5, 4, true}, {5, 6, true}, {5, 8, true},
 			//},
 			//{
-			//	{6, 4, false}, {6, 5, false}, {6, 6, false},
-			//},
-			//{
-			//	{4, 4, false}, {4, 5, false}, {4, 6, false}, {4, 7, false},
-			//},
-			//{
-			//	{5, 4, true}, {5, 5, true}, {5, 6, true}, {5, 7, true},
-			//},
-			//{
-			//	{6, 4, false}, {6, 5, false}, {6, 6, false}, {6, 7, false},
-			//},
-			//{
-			//	{7, 4, false}, {7, 5, false}, {7, 6, false}, {7, 7, false},
+			//	{6, 4, false}, {6, 6, false}, {6, 8, false},
 			//},
 
 			{
