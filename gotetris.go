@@ -106,6 +106,20 @@ func (g *game) moveDown() {
 }
 
 func (g *game) rotate() {
+	// keep a backup for reverting
+	oldCoordinates := [][]coordinate{}
+	for row := 0; row < len(g.coordinates); row++ {
+		oldCoordinates = append(oldCoordinates, []coordinate{})
+		for col := 0; col < len(g.coordinates[row]); col++ {
+			oldCoordinate := coordinate{
+				x:      g.coordinates[row][col].x,
+				y:      g.coordinates[row][col].y,
+				filled: g.coordinates[row][col].filled,
+			}
+			oldCoordinates[row] = append(oldCoordinates[row], oldCoordinate)
+		}
+	}
+
 	// transpose
 	tmpCoordinates := [][]coordinate{}
 	for row := 0; row < len(g.coordinates); row++ {
@@ -132,6 +146,20 @@ func (g *game) rotate() {
 			lcol++
 			rcol--
 		}
+	}
+
+	revert := false
+	for row := 0; row < len(g.coordinates); row++ {
+		for col := len(g.coordinates[row]) - 1; col >= 0; col-- {
+			if g.coordinates[row][col].x+1 >= rightX && g.coordinates[row][col].filled ||
+				g.coordinates[row][col].x <= leftX && g.coordinates[row][col].filled ||
+				g.coordinates[row][col].y >= rightY && g.coordinates[row][col].filled {
+				revert = true
+			}
+		}
+	}
+	if revert {
+		g.coordinates = oldCoordinates
 	}
 }
 
