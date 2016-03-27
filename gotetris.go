@@ -38,6 +38,90 @@ const (
 	yStep  int    = 1
 )
 
+type block [][]coordinate
+
+var (
+	shapes []block = []block{
+		{
+			{
+				{1, 8, false}, {1, 10, false}, {1, 12, false}, {1, 14, false},
+			},
+			{
+				{2, 8, true}, {2, 10, true}, {2, 12, true}, {2, 14, true},
+			},
+			{
+				{3, 8, false}, {3, 10, false}, {3, 12, false}, {3, 14, false},
+			},
+			{
+				{4, 8, false}, {4, 10, false}, {4, 12, false}, {4, 14, false},
+			},
+		},
+		{
+			{
+				{1, 8, true}, {1, 10, false}, {1, 12, false},
+			},
+			{
+				{2, 8, true}, {2, 10, true}, {2, 12, true},
+			},
+			{
+				{3, 8, false}, {3, 10, false}, {3, 12, false},
+			},
+		},
+		{
+			{
+				{1, 8, false}, {1, 10, false}, {1, 12, true},
+			},
+			{
+				{2, 8, true}, {2, 10, true}, {2, 12, true},
+			},
+			{
+				{3, 8, false}, {3, 10, false}, {3, 12, false},
+			},
+		},
+		{
+			{
+				{1, 10, true}, {1, 12, true},
+			},
+			{
+				{2, 10, true}, {2, 12, true},
+			},
+		},
+		{
+			{
+				{1, 8, false}, {1, 10, true}, {1, 12, true},
+			},
+			{
+				{2, 8, true}, {2, 10, true}, {2, 12, false},
+			},
+			{
+				{3, 8, false}, {3, 10, false}, {3, 12, false},
+			},
+		},
+		{
+			{
+				{1, 8, false}, {1, 10, true}, {1, 12, false},
+			},
+			{
+				{2, 8, true}, {2, 10, true}, {2, 12, true},
+			},
+			{
+				{3, 8, false}, {3, 10, false}, {3, 12, false},
+			},
+		},
+		{
+			{
+				{1, 8, true}, {1, 10, true}, {1, 12, false},
+			},
+			{
+				{2, 8, false}, {2, 10, true}, {2, 12, true},
+			},
+			{
+				{3, 8, false}, {3, 10, false}, {3, 12, false},
+			},
+		},
+	}
+)
+
 type coordinate struct {
 	y      int
 	x      int
@@ -45,23 +129,23 @@ type coordinate struct {
 }
 
 type game struct {
-	coordinates [][]coordinate
+	block block
 }
 
 func (g *game) moveLeft() {
 	revert := false
-	for row := 0; row < len(g.coordinates); row++ {
-		for col := 0; col < len(g.coordinates[row]); col++ {
-			g.coordinates[row][col].x -= xStep
-			if g.coordinates[row][col].x <= leftX && g.coordinates[row][col].filled {
+	for row := 0; row < len(g.block); row++ {
+		for col := 0; col < len(g.block[row]); col++ {
+			g.block[row][col].x -= xStep
+			if g.block[row][col].x <= leftX && g.block[row][col].filled {
 				revert = true
 			}
 		}
 	}
 	if revert {
-		for row := 0; row < len(g.coordinates); row++ {
-			for col := 0; col < len(g.coordinates[row]); col++ {
-				g.coordinates[row][col].x += xStep
+		for row := 0; row < len(g.block); row++ {
+			for col := 0; col < len(g.block[row]); col++ {
+				g.block[row][col].x += xStep
 			}
 		}
 	}
@@ -69,18 +153,18 @@ func (g *game) moveLeft() {
 
 func (g *game) moveRight() {
 	revert := false
-	for row := 0; row < len(g.coordinates); row++ {
-		for col := len(g.coordinates[row]) - 1; col >= 0; col-- {
-			g.coordinates[row][col].x += xStep
-			if g.coordinates[row][col].x+1 >= rightX && g.coordinates[row][col].filled {
+	for row := 0; row < len(g.block); row++ {
+		for col := len(g.block[row]) - 1; col >= 0; col-- {
+			g.block[row][col].x += xStep
+			if g.block[row][col].x+1 >= rightX && g.block[row][col].filled {
 				revert = true
 			}
 		}
 	}
 	if revert {
-		for row := 0; row < len(g.coordinates); row++ {
-			for col := 0; col < len(g.coordinates[row]); col++ {
-				g.coordinates[row][col].x -= xStep
+		for row := 0; row < len(g.block); row++ {
+			for col := 0; col < len(g.block[row]); col++ {
+				g.block[row][col].x -= xStep
 			}
 		}
 	}
@@ -88,18 +172,18 @@ func (g *game) moveRight() {
 
 func (g *game) moveDown() {
 	revert := false
-	for row := 0; row < len(g.coordinates); row++ {
-		for col := 0; col < len(g.coordinates[row]); col++ {
-			g.coordinates[row][col].y += yStep
-			if g.coordinates[row][col].y >= rightY && g.coordinates[row][col].filled {
+	for row := 0; row < len(g.block); row++ {
+		for col := 0; col < len(g.block[row]); col++ {
+			g.block[row][col].y += yStep
+			if g.block[row][col].y >= rightY && g.block[row][col].filled {
 				revert = true
 			}
 		}
 	}
 	if revert {
-		for row := 0; row < len(g.coordinates); row++ {
-			for col := 0; col < len(g.coordinates[row]); col++ {
-				g.coordinates[row][col].y -= yStep
+		for row := 0; row < len(g.block); row++ {
+			for col := 0; col < len(g.block[row]); col++ {
+				g.block[row][col].y -= yStep
 			}
 		}
 	}
@@ -107,59 +191,59 @@ func (g *game) moveDown() {
 
 func (g *game) rotate() {
 	// keep a backup for reverting
-	oldCoordinates := [][]coordinate{}
-	for row := 0; row < len(g.coordinates); row++ {
-		oldCoordinates = append(oldCoordinates, []coordinate{})
-		for col := 0; col < len(g.coordinates[row]); col++ {
+	oldBlock := block{}
+	for row := 0; row < len(g.block); row++ {
+		oldBlock = append(oldBlock, []coordinate{})
+		for col := 0; col < len(g.block[row]); col++ {
 			oldCoordinate := coordinate{
-				x:      g.coordinates[row][col].x,
-				y:      g.coordinates[row][col].y,
-				filled: g.coordinates[row][col].filled,
+				x:      g.block[row][col].x,
+				y:      g.block[row][col].y,
+				filled: g.block[row][col].filled,
 			}
-			oldCoordinates[row] = append(oldCoordinates[row], oldCoordinate)
+			oldBlock[row] = append(oldBlock[row], oldCoordinate)
 		}
 	}
 
 	// transpose
-	tmpCoordinates := [][]coordinate{}
-	for row := 0; row < len(g.coordinates); row++ {
-		tmpCoordinates = append(tmpCoordinates, []coordinate{})
-		for col := 0; col < len(g.coordinates[row]); col++ {
-			tmpCoordinates[row] = append(tmpCoordinates[row], g.coordinates[col][row])
+	tmpBlock := block{}
+	for row := 0; row < len(g.block); row++ {
+		tmpBlock = append(tmpBlock, []coordinate{})
+		for col := 0; col < len(g.block[row]); col++ {
+			tmpBlock[row] = append(tmpBlock[row], g.block[col][row])
 		}
 	}
 
-	for row := 0; row < len(g.coordinates); row++ {
-		for col := 0; col < len(g.coordinates[row]); col++ {
-			g.coordinates[row][col].filled = tmpCoordinates[row][col].filled
+	for row := 0; row < len(g.block); row++ {
+		for col := 0; col < len(g.block[row]); col++ {
+			g.block[row][col].filled = tmpBlock[row][col].filled
 		}
 	}
 
 	// reverse
-	for row := 0; row < len(g.coordinates); row++ {
+	for row := 0; row < len(g.block); row++ {
 		lcol := 0
-		rcol := len(g.coordinates[row]) - 1
-		for lcol < len(g.coordinates[row])/2 {
-			tmp := g.coordinates[row][rcol].filled
-			g.coordinates[row][rcol].filled = g.coordinates[row][lcol].filled
-			g.coordinates[row][lcol].filled = tmp
+		rcol := len(g.block[row]) - 1
+		for lcol < len(g.block[row])/2 {
+			tmp := g.block[row][rcol].filled
+			g.block[row][rcol].filled = g.block[row][lcol].filled
+			g.block[row][lcol].filled = tmp
 			lcol++
 			rcol--
 		}
 	}
 
 	revert := false
-	for row := 0; row < len(g.coordinates); row++ {
-		for col := len(g.coordinates[row]) - 1; col >= 0; col-- {
-			if g.coordinates[row][col].x+1 >= rightX && g.coordinates[row][col].filled ||
-				g.coordinates[row][col].x <= leftX && g.coordinates[row][col].filled ||
-				g.coordinates[row][col].y >= rightY && g.coordinates[row][col].filled {
+	for row := 0; row < len(g.block); row++ {
+		for col := len(g.block[row]) - 1; col >= 0; col-- {
+			if g.block[row][col].x+1 >= rightX && g.block[row][col].filled ||
+				g.block[row][col].x <= leftX && g.block[row][col].filled ||
+				g.block[row][col].y >= rightY && g.block[row][col].filled {
 				revert = true
 			}
 		}
 	}
 	if revert {
-		g.coordinates = oldCoordinates
+		g.block = oldBlock
 	}
 }
 
@@ -218,15 +302,15 @@ func drawBox() {
 
 func drawBlock(g *game) {
 	colorDefault := termbox.ColorDefault
-	for row := 0; row < len(g.coordinates); row++ {
-		for col := 0; col < len(g.coordinates[row]); col++ {
+	for row := 0; row < len(g.block); row++ {
+		for col := 0; col < len(g.block[row]); col++ {
 			c := '\u2588'
-			filled := g.coordinates[row][col].filled
+			filled := g.block[row][col].filled
 			if !filled {
 				c = ' '
 			}
-			x := g.coordinates[row][col].x
-			y := g.coordinates[row][col].y
+			x := g.block[row][col].x
+			y := g.block[row][col].y
 			termbox.SetCell(x, y, c, colorDefault, colorDefault)
 			//if col != len(g.coordinates[row])-1 {
 			termbox.SetCell(x+1, y, c, colorDefault, colorDefault)
@@ -260,30 +344,7 @@ func runGame() {
 	}()
 
 	game := &game{
-		coordinates: [][]coordinate{
-			//{
-			//	{4, 4, false}, {4, 6, false}, {4, 8, true},
-			//},
-			//{
-			//	{5, 4, true}, {5, 6, true}, {5, 8, true},
-			//},
-			//{
-			//	{6, 4, false}, {6, 6, false}, {6, 8, false},
-			//},
-
-			{
-				{4, 4, false}, {4, 6, false}, {4, 8, false}, {4, 10, false},
-			},
-			{
-				{5, 4, true}, {5, 6, true}, {5, 8, true}, {5, 10, true},
-			},
-			{
-				{6, 4, false}, {6, 6, false}, {6, 8, false}, {6, 10, false},
-			},
-			{
-				{7, 4, false}, {7, 6, false}, {7, 8, false}, {7, 10, false},
-			},
-		},
+		block: shapes[6],
 	}
 
 	redrawAll(game)
