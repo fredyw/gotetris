@@ -25,7 +25,9 @@ package main
 import (
 	"fmt"
 	"github.com/nsf/termbox-go"
+	"math/rand"
 	"os"
+	"time"
 )
 
 const (
@@ -343,8 +345,10 @@ func runGame() {
 		}
 	}()
 
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	game := &game{
-		block: shapes[6],
+		block: shapes[rand.Int31n(7)],
 	}
 
 	redrawAll(game)
