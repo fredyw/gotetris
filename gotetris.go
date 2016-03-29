@@ -32,11 +32,11 @@ import (
 
 const (
 	author    string = "Fredy Wijaya"
-	leftX     int    = 2
+	leftX     int    = 1
 	leftY     int    = 0
 	rightX    int    = 22
 	rightY    int    = 20
-	xStep     int    = 1
+	xStep     int    = 2
 	yStep     int    = 1
 	numShapes int32  = 7
 )
@@ -137,6 +137,8 @@ type game struct {
 }
 
 func (g *game) moveLeft() {
+	// TODO: check for collision
+	
 	revert := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := 0; col < len(g.newBlock[row]); col++ {
@@ -156,6 +158,8 @@ func (g *game) moveLeft() {
 }
 
 func (g *game) moveRight() {
+	// TODO: check for collision
+
 	revert := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := len(g.newBlock[row]) - 1; col >= 0; col-- {
@@ -175,16 +179,20 @@ func (g *game) moveRight() {
 }
 
 func (g *game) moveDown() {
-	stop := false
+	// check for collision
+	collision := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := 0; col < len(g.newBlock[row]); col++ {
 			g.newBlock[row][col].y += yStep
-			if g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled {
-				stop = true
+			x := g.newBlock[row][col].x
+			y := g.newBlock[row][col].y
+			if g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled ||
+				(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
+				collision = true
 			}
 		}
 	}
-	if stop {
+	if collision {
 		for row := 0; row < len(g.newBlock); row++ {
 			for col := 0; col < len(g.newBlock[row]); col++ {
 				g.newBlock[row][col].y -= yStep
@@ -207,6 +215,8 @@ func (g *game) moveDown() {
 }
 
 func (g *game) rotate() {
+	// TODO: check for collision
+
 	// keep a backup for reverting
 	oldBlock := block{}
 	for row := 0; row < len(g.newBlock); row++ {
@@ -322,12 +332,14 @@ func drawNewBlock(g *game) {
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := 0; col < len(g.newBlock[row]); col++ {
 			c := '\u2588'
-			filled := g.newBlock[row][col].filled
-			if !filled {
-				c = ' '
-			}
 			x := g.newBlock[row][col].x
 			y := g.newBlock[row][col].y
+			filled := g.newBlock[row][col].filled
+			if !filled {
+				if !g.block[y][x].filled {
+					c = ' '
+				}
+			}
 			termbox.SetCell(x, y, c, colorDefault, colorDefault)
 			termbox.SetCell(x+1, y, c, colorDefault, colorDefault)
 		}
@@ -339,12 +351,12 @@ func drawBlock(g *game) {
 	for row := 0; row < len(g.block); row++ {
 		for col := 0; col < len(g.block[row]); col++ {
 			c := '\u2588'
+			x := g.block[row][col].x
+			y := g.block[row][col].y
 			filled := g.block[row][col].filled
 			if !filled {
 				c = ' '
 			}
-			x := g.block[row][col].x
-			y := g.block[row][col].y
 			termbox.SetCell(x, y, c, colorDefault, colorDefault)
 		}
 	}
@@ -379,9 +391,10 @@ func createNewBlock() block {
 
 func initBlock() block {
 	block := block{}
-	for row := 0; row <= rightY; row++ {
+	// TODO:
+	for row := 0; row <= 30; row++ {
 		block = append(block, []coordinate{})
-		for col := 0; col <= rightX; col++ {
+		for col := 0; col <= 30; col++ {
 			block[row] = append(block[row], coordinate{
 				x:      col,
 				y:      row,
