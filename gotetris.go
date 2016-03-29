@@ -31,13 +31,14 @@ import (
 )
 
 const (
-	author string = "Fredy Wijaya"
-	leftX  int    = 2
-	leftY  int    = 0
-	rightX int    = 22
-	rightY int    = 20
-	xStep  int    = 1
-	yStep  int    = 1
+	author    string = "Fredy Wijaya"
+	leftX     int    = 2
+	leftY     int    = 0
+	rightX    int    = 22
+	rightY    int    = 20
+	xStep     int    = 1
+	yStep     int    = 1
+	numShapes int32  = 7
 )
 
 type block [][]coordinate
@@ -131,23 +132,24 @@ type coordinate struct {
 }
 
 type game struct {
-	block block
+	newBlock block
+	block    block
 }
 
 func (g *game) moveLeft() {
 	revert := false
-	for row := 0; row < len(g.block); row++ {
-		for col := 0; col < len(g.block[row]); col++ {
-			g.block[row][col].x -= xStep
-			if g.block[row][col].x <= leftX && g.block[row][col].filled {
+	for row := 0; row < len(g.newBlock); row++ {
+		for col := 0; col < len(g.newBlock[row]); col++ {
+			g.newBlock[row][col].x -= xStep
+			if g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled {
 				revert = true
 			}
 		}
 	}
 	if revert {
-		for row := 0; row < len(g.block); row++ {
-			for col := 0; col < len(g.block[row]); col++ {
-				g.block[row][col].x += xStep
+		for row := 0; row < len(g.newBlock); row++ {
+			for col := 0; col < len(g.newBlock[row]); col++ {
+				g.newBlock[row][col].x += xStep
 			}
 		}
 	}
@@ -155,52 +157,65 @@ func (g *game) moveLeft() {
 
 func (g *game) moveRight() {
 	revert := false
-	for row := 0; row < len(g.block); row++ {
-		for col := len(g.block[row]) - 1; col >= 0; col-- {
-			g.block[row][col].x += xStep
-			if g.block[row][col].x+1 >= rightX && g.block[row][col].filled {
+	for row := 0; row < len(g.newBlock); row++ {
+		for col := len(g.newBlock[row]) - 1; col >= 0; col-- {
+			g.newBlock[row][col].x += xStep
+			if g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled {
 				revert = true
 			}
 		}
 	}
 	if revert {
-		for row := 0; row < len(g.block); row++ {
-			for col := 0; col < len(g.block[row]); col++ {
-				g.block[row][col].x -= xStep
+		for row := 0; row < len(g.newBlock); row++ {
+			for col := 0; col < len(g.newBlock[row]); col++ {
+				g.newBlock[row][col].x -= xStep
 			}
 		}
 	}
 }
 
 func (g *game) moveDown() {
-	revert := false
-	for row := 0; row < len(g.block); row++ {
-		for col := 0; col < len(g.block[row]); col++ {
-			g.block[row][col].y += yStep
-			if g.block[row][col].y >= rightY && g.block[row][col].filled {
-				revert = true
+	stop := false
+	for row := 0; row < len(g.newBlock); row++ {
+		for col := 0; col < len(g.newBlock[row]); col++ {
+			g.newBlock[row][col].y += yStep
+			if g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled {
+				stop = true
 			}
 		}
 	}
-	if revert {
-		for row := 0; row < len(g.block); row++ {
-			for col := 0; col < len(g.block[row]); col++ {
-				g.block[row][col].y -= yStep
+	if stop {
+		for row := 0; row < len(g.newBlock); row++ {
+			for col := 0; col < len(g.newBlock[row]); col++ {
+				g.newBlock[row][col].y -= yStep
 			}
 		}
+
+		for row := 0; row < len(g.newBlock); row++ {
+			for col := 0; col < len(g.newBlock[row]); col++ {
+				x := g.newBlock[row][col].x
+				y := g.newBlock[row][col].y
+				filled := g.newBlock[row][col].filled
+				if filled {
+					g.block[y][x].filled = filled
+					g.block[y][x+1].filled = filled
+				}
+			}
+		}
+		g.newBlock = createNewBlock()
 	}
 }
 
 func (g *game) rotate() {
 	// keep a backup for reverting
 	oldBlock := block{}
-	for row := 0; row < len(g.block); row++ {
+	for row := 0; row < len(g.newBlock); row++ {
 		oldBlock = append(oldBlock, []coordinate{})
-		for col := 0; col < len(g.block[row]); col++ {
+		for col := 0; col < len(g.newBlock[row]); col++ {
 			oldCoordinate := coordinate{
-				x:      g.block[row][col].x,
-				y:      g.block[row][col].y,
-				filled: g.block[row][col].filled,
+				x:      g.newBlock[row][col].x,
+				y:      g.newBlock[row][col].y,
+				filled: g.newBlock[row][col].filled,
 			}
 			oldBlock[row] = append(oldBlock[row], oldCoordinate)
 		}
@@ -208,44 +223,44 @@ func (g *game) rotate() {
 
 	// transpose
 	tmpBlock := block{}
-	for row := 0; row < len(g.block); row++ {
+	for row := 0; row < len(g.newBlock); row++ {
 		tmpBlock = append(tmpBlock, []coordinate{})
-		for col := 0; col < len(g.block[row]); col++ {
-			tmpBlock[row] = append(tmpBlock[row], g.block[col][row])
+		for col := 0; col < len(g.newBlock[row]); col++ {
+			tmpBlock[row] = append(tmpBlock[row], g.newBlock[col][row])
 		}
 	}
 
-	for row := 0; row < len(g.block); row++ {
-		for col := 0; col < len(g.block[row]); col++ {
-			g.block[row][col].filled = tmpBlock[row][col].filled
+	for row := 0; row < len(g.newBlock); row++ {
+		for col := 0; col < len(g.newBlock[row]); col++ {
+			g.newBlock[row][col].filled = tmpBlock[row][col].filled
 		}
 	}
 
 	// reverse
-	for row := 0; row < len(g.block); row++ {
+	for row := 0; row < len(g.newBlock); row++ {
 		lcol := 0
-		rcol := len(g.block[row]) - 1
-		for lcol < len(g.block[row])/2 {
-			tmp := g.block[row][rcol].filled
-			g.block[row][rcol].filled = g.block[row][lcol].filled
-			g.block[row][lcol].filled = tmp
+		rcol := len(g.newBlock[row]) - 1
+		for lcol < len(g.newBlock[row])/2 {
+			tmp := g.newBlock[row][rcol].filled
+			g.newBlock[row][rcol].filled = g.newBlock[row][lcol].filled
+			g.newBlock[row][lcol].filled = tmp
 			lcol++
 			rcol--
 		}
 	}
 
 	revert := false
-	for row := 0; row < len(g.block); row++ {
-		for col := len(g.block[row]) - 1; col >= 0; col-- {
-			if g.block[row][col].x+1 >= rightX && g.block[row][col].filled ||
-				g.block[row][col].x <= leftX && g.block[row][col].filled ||
-				g.block[row][col].y >= rightY && g.block[row][col].filled {
+	for row := 0; row < len(g.newBlock); row++ {
+		for col := len(g.newBlock[row]) - 1; col >= 0; col-- {
+			if g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled ||
+				g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled ||
+				g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled {
 				revert = true
 			}
 		}
 	}
 	if revert {
-		g.block = oldBlock
+		g.newBlock = oldBlock
 	}
 }
 
@@ -295,11 +310,28 @@ func drawRightLine() {
 	}
 }
 
-func drawBox() {
+func drawGrid() {
 	drawTopLine()
 	drawLeftLine()
 	drawRightLine()
 	drawBottomLine()
+}
+
+func drawNewBlock(g *game) {
+	colorDefault := termbox.ColorDefault
+	for row := 0; row < len(g.newBlock); row++ {
+		for col := 0; col < len(g.newBlock[row]); col++ {
+			c := '\u2588'
+			filled := g.newBlock[row][col].filled
+			if !filled {
+				c = ' '
+			}
+			x := g.newBlock[row][col].x
+			y := g.newBlock[row][col].y
+			termbox.SetCell(x, y, c, colorDefault, colorDefault)
+			termbox.SetCell(x+1, y, c, colorDefault, colorDefault)
+		}
+	}
 }
 
 func drawBlock(g *game) {
@@ -314,9 +346,6 @@ func drawBlock(g *game) {
 			x := g.block[row][col].x
 			y := g.block[row][col].y
 			termbox.SetCell(x, y, c, colorDefault, colorDefault)
-			//if col != len(g.coordinates[row])-1 {
-			termbox.SetCell(x+1, y, c, colorDefault, colorDefault)
-			//}
 		}
 	}
 }
@@ -326,9 +355,41 @@ func redrawAll(game *game) {
 	termbox.Clear(colorDefault, colorDefault)
 
 	drawBlock(game)
-	drawBox()
+	drawNewBlock(game)
+	drawGrid()
 
 	termbox.Flush()
+}
+
+func createNewBlock() block {
+	shape := shapes[rand.Int31n(numShapes)]
+	// create a copy
+	newBlock := block{}
+	for row := 0; row < len(shape); row++ {
+		newBlock = append(newBlock, []coordinate{})
+		for col := 0; col < len(shape[row]); col++ {
+			newBlock[row] = append(newBlock[row], coordinate{})
+			newBlock[row][col].x = shape[row][col].x
+			newBlock[row][col].y = shape[row][col].y
+			newBlock[row][col].filled = shape[row][col].filled
+		}
+	}
+	return newBlock
+}
+
+func initBlock() block {
+	block := block{}
+	for row := 0; row <= rightY; row++ {
+		block = append(block, []coordinate{})
+		for col := 0; col <= rightX; col++ {
+			block[row] = append(block[row], coordinate{
+				x:      col,
+				y:      row,
+				filled: false,
+			})
+		}
+	}
+	return block
 }
 
 func runGame() {
@@ -348,7 +409,8 @@ func runGame() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	game := &game{
-		block: shapes[rand.Int31n(7)],
+		newBlock: createNewBlock(),
+		block:    initBlock(),
 	}
 
 	redrawAll(game)
