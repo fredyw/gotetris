@@ -31,14 +31,15 @@ import (
 )
 
 const (
-	author    string = "Fredy Wijaya"
-	leftX     int    = 1
-	leftY     int    = 0
-	rightX    int    = 22
-	rightY    int    = 20
-	xStep     int    = 2
-	yStep     int    = 1
-	numShapes int32  = 7
+	author string = "Fredy Wijaya"
+	// TODO: fix the grid size
+	leftX     int   = 1
+	leftY     int   = 0
+	rightX    int   = 22
+	rightY    int   = 20
+	xStep     int   = 2
+	yStep     int   = 1
+	numShapes int32 = 7
 )
 
 type block [][]coordinate
@@ -138,7 +139,7 @@ type game struct {
 
 func (g *game) moveLeft() {
 	// TODO: check for collision
-	
+
 	revert := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := 0; col < len(g.newBlock[row]); col++ {
@@ -212,6 +213,7 @@ func (g *game) moveDown() {
 		}
 		g.newBlock = createNewBlock()
 	}
+	removeBlock(g)
 }
 
 func (g *game) rotate() {
@@ -271,6 +273,22 @@ func (g *game) rotate() {
 	}
 	if revert {
 		g.newBlock = oldBlock
+	}
+}
+
+func removeBlock(g *game) {
+	for row := 1; row <= 20; row++ {
+		allFilled := true
+		for col := leftX + 1; col < rightX; col++ {
+			filled := g.block[row][col].filled
+			if !filled {
+				allFilled = false
+				break
+			}
+		}
+		if allFilled {
+			// TODO: remove the row
+		}
 	}
 }
 
