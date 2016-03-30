@@ -138,18 +138,21 @@ type game struct {
 }
 
 func (g *game) moveLeft() {
-	// TODO: check for collision
-
-	revert := false
+	collision := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := 0; col < len(g.newBlock[row]); col++ {
 			g.newBlock[row][col].x -= xStep
-			if g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled {
-				revert = true
+			x := g.newBlock[row][col].x
+			y := g.newBlock[row][col].y
+			if x >= 0 && y >= 0 {
+				if g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled ||
+					(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
+					collision = true
+				}
 			}
 		}
 	}
-	if revert {
+	if collision {
 		for row := 0; row < len(g.newBlock); row++ {
 			for col := 0; col < len(g.newBlock[row]); col++ {
 				g.newBlock[row][col].x += xStep
@@ -159,18 +162,19 @@ func (g *game) moveLeft() {
 }
 
 func (g *game) moveRight() {
-	// TODO: check for collision
-
-	revert := false
+	collision := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := len(g.newBlock[row]) - 1; col >= 0; col-- {
 			g.newBlock[row][col].x += xStep
-			if g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled {
-				revert = true
+			x := g.newBlock[row][col].x
+			y := g.newBlock[row][col].y
+			if g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled ||
+				(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
+				collision = true
 			}
 		}
 	}
-	if revert {
+	if collision {
 		for row := 0; row < len(g.newBlock); row++ {
 			for col := 0; col < len(g.newBlock[row]); col++ {
 				g.newBlock[row][col].x -= xStep
@@ -261,17 +265,17 @@ func (g *game) rotate() {
 		}
 	}
 
-	revert := false
+	collision := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := len(g.newBlock[row]) - 1; col >= 0; col-- {
 			if g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled ||
 				g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled ||
 				g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled {
-				revert = true
+				collision = true
 			}
 		}
 	}
-	if revert {
+	if collision {
 		g.newBlock = oldBlock
 	}
 }
@@ -354,8 +358,10 @@ func drawNewBlock(g *game) {
 			y := g.newBlock[row][col].y
 			filled := g.newBlock[row][col].filled
 			if !filled {
-				if !g.block[y][x].filled {
-					c = ' '
+				if x >= 0 {
+					if !g.block[y][x].filled {
+						c = ' '
+					}
 				}
 			}
 			termbox.SetCell(x, y, c, colorDefault, colorDefault)
@@ -392,7 +398,8 @@ func redrawAll(game *game) {
 }
 
 func createNewBlock() block {
-	shape := shapes[rand.Int31n(numShapes)]
+	//shape := shapes[rand.Int31n(numShapes)]
+	shape := shapes[0]
 	// create a copy
 	newBlock := block{}
 	for row := 0; row < len(shape); row++ {
