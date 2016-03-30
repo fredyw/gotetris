@@ -145,7 +145,7 @@ func (g *game) moveLeft() {
 			x := g.newBlock[row][col].x
 			y := g.newBlock[row][col].y
 			if x >= 0 && y >= 0 {
-				if g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled ||
+				if (g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled) ||
 					(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
 					collision = true
 				}
@@ -168,7 +168,7 @@ func (g *game) moveRight() {
 			g.newBlock[row][col].x += xStep
 			x := g.newBlock[row][col].x
 			y := g.newBlock[row][col].y
-			if g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled ||
+			if (g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled) ||
 				(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
 				collision = true
 			}
@@ -189,11 +189,14 @@ func (g *game) moveDown() {
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := 0; col < len(g.newBlock[row]); col++ {
 			g.newBlock[row][col].y += yStep
-			x := g.newBlock[row][col].x
-			y := g.newBlock[row][col].y
-			if g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled ||
-				(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
+			if g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled {
 				collision = true
+			} else {
+				x := g.newBlock[row][col].x
+				y := g.newBlock[row][col].y
+				if x >= 0 && g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled {
+					collision = true
+				}
 			}
 		}
 	}
@@ -215,14 +218,12 @@ func (g *game) moveDown() {
 				}
 			}
 		}
+		removeBlock(g)
 		g.newBlock = createNewBlock()
 	}
-	removeBlock(g)
 }
 
 func (g *game) rotate() {
-	// TODO: check for collision
-
 	// keep a backup for reverting
 	oldBlock := block{}
 	for row := 0; row < len(g.newBlock); row++ {
@@ -265,6 +266,7 @@ func (g *game) rotate() {
 		}
 	}
 
+	// TODO: check for collision
 	collision := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := len(g.newBlock[row]) - 1; col >= 0; col-- {
@@ -278,20 +280,33 @@ func (g *game) rotate() {
 	if collision {
 		g.newBlock = oldBlock
 	}
+	removeBlock(g)
 }
 
 func removeBlock(g *game) {
-	for row := 1; row <= 20; row++ {
-		allFilled := true
-		for col := leftX + 1; col < rightX; col++ {
-			filled := g.block[row][col].filled
-			if !filled {
-				allFilled = false
-				break
+	for true {
+		rows := []int{}
+		for row := leftY + 1; row < rightY; row++ {
+			allFilled := true
+			for col := leftX + 1; col < rightX; col++ {
+				filled := g.block[row][col].filled
+				if !filled {
+					allFilled = false
+				}
+			}
+			if allFilled {
+				rows = append(rows, row)
 			}
 		}
-		if allFilled {
-			// TODO: remove the row
+		if len(rows) > 0 {
+			lastRow := rows[len(rows)-1]
+			for row := lastRow; row > 0; row-- {
+				for col := 0; col < len(g.block[row]); col++ {
+					g.block[row][col].filled = g.block[row-1][col].filled
+				}
+			}
+		} else {
+			break
 		}
 	}
 }
