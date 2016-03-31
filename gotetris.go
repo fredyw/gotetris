@@ -30,13 +30,6 @@ import (
 	"time"
 )
 
-type grid struct {
-	leftX  int
-	leftY  int
-	rightX int
-	rightY int
-}
-
 const (
 	author    string = "Fredy Wijaya"
 	xStep     int    = 2
@@ -45,9 +38,20 @@ const (
 	maxLevel  int    = 9
 	maxRow    int    = 25
 	maxCol    int    = 25
+	lost      status = 1
+	won       status = 2
+	playing   status = 3
 )
 
+type status int
 type block [][]coordinate
+
+type grid struct {
+	leftX  int
+	leftY  int
+	rightX int
+	rightY int
+}
 
 var (
 	leftGrid grid = grid{
@@ -153,6 +157,7 @@ type game struct {
 	newBlock block
 	block    block
 	score    int
+	status   status
 }
 
 func (g *game) moveLeft() {
@@ -531,6 +536,32 @@ func drawSeparator3() {
 		} else {
 			c = '\u2500'
 		}
+		termbox.SetCell(i, 10, c, colorDefault, colorDefault)
+	}
+}
+
+func drawGameStatus(status status) {
+	x := rightGrid.leftX + 2
+	text := ""
+	if status == lost {
+		text = "You lost!"
+	} else if status == won {
+		text = "You won!"
+	}
+	drawText(x, 11, fmt.Sprintf("%s", text))
+}
+
+func drawSeparator4() {
+	colorDefault := termbox.ColorDefault
+	for i := rightGrid.leftX; i <= rightGrid.rightX; i++ {
+		var c rune
+		if i == rightGrid.leftX {
+			c = '\u251C'
+		} else if i == rightGrid.rightX {
+			c = '\u2524'
+		} else {
+			c = '\u2500'
+		}
 		termbox.SetCell(i, 18, c, colorDefault, colorDefault)
 	}
 }
@@ -551,6 +582,8 @@ func drawRightGrid(game *game) {
 	drawSeparator2()
 	drawControls()
 	drawSeparator3()
+	drawGameStatus(game.status)
+	drawSeparator4()
 	drawAuthor()
 }
 
