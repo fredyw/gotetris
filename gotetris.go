@@ -30,21 +30,37 @@ import (
 	"time"
 )
 
+type grid struct {
+	leftX  int
+	leftY  int
+	rightX int
+	rightY int
+}
+
 const (
-	author string = "Fredy Wijaya"
-	// TODO: fix the grid size
-	leftX     int   = 1
-	leftY     int   = 0
-	rightX    int   = 22
-	rightY    int   = 20
-	xStep     int   = 2
-	yStep     int   = 1
-	numShapes int32 = 7
+	author    string = "Fredy Wijaya"
+	xStep     int    = 2
+	yStep     int    = 1
+	numShapes int32  = 7
+	maxRow    int    = 25
+	maxCol    int    = 25
 )
 
 type block [][]coordinate
 
 var (
+	leftGrid grid = grid{
+		leftX:  1,
+		leftY:  0,
+		rightX: 22,
+		rightY: 20,
+	}
+	rightGrid grid = grid{
+		leftX:  leftGrid.rightX,
+		leftY:  leftGrid.leftY,
+		rightX: 46,
+		rightY: leftGrid.rightY,
+	}
 	shapes []block = []block{
 		{
 			{
@@ -145,7 +161,7 @@ func (g *game) moveLeft() {
 			x := g.newBlock[row][col].x
 			y := g.newBlock[row][col].y
 			if x >= 0 && y >= 0 {
-				if (g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled) ||
+				if (g.newBlock[row][col].x <= leftGrid.leftX && g.newBlock[row][col].filled) ||
 					(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
 					collision = true
 				}
@@ -168,7 +184,7 @@ func (g *game) moveRight() {
 			g.newBlock[row][col].x += xStep
 			x := g.newBlock[row][col].x
 			y := g.newBlock[row][col].y
-			if (g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled) ||
+			if (g.newBlock[row][col].x+1 >= leftGrid.rightX && g.newBlock[row][col].filled) ||
 				(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
 				collision = true
 			}
@@ -189,7 +205,7 @@ func (g *game) moveDown() {
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := 0; col < len(g.newBlock[row]); col++ {
 			g.newBlock[row][col].y += yStep
-			if g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled {
+			if g.newBlock[row][col].y >= leftGrid.rightY && g.newBlock[row][col].filled {
 				collision = true
 			} else {
 				x := g.newBlock[row][col].x
@@ -266,13 +282,15 @@ func (g *game) rotate() {
 		}
 	}
 
-	// TODO: check for collision
 	collision := false
 	for row := 0; row < len(g.newBlock); row++ {
 		for col := len(g.newBlock[row]) - 1; col >= 0; col-- {
-			if g.newBlock[row][col].x+1 >= rightX && g.newBlock[row][col].filled ||
-				g.newBlock[row][col].x <= leftX && g.newBlock[row][col].filled ||
-				g.newBlock[row][col].y >= rightY && g.newBlock[row][col].filled {
+			x := g.newBlock[row][col].x
+			y := g.newBlock[row][col].y
+			if g.newBlock[row][col].x+1 >= leftGrid.rightX && g.newBlock[row][col].filled ||
+				g.newBlock[row][col].x <= leftGrid.leftX && g.newBlock[row][col].filled ||
+				g.newBlock[row][col].y >= leftGrid.rightY && g.newBlock[row][col].filled ||
+				(g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled) {
 				collision = true
 			}
 		}
@@ -286,9 +304,9 @@ func (g *game) rotate() {
 func removeBlock(g *game) {
 	for true {
 		rows := []int{}
-		for row := leftY + 1; row < rightY; row++ {
+		for row := leftGrid.leftY + 1; row < leftGrid.rightY; row++ {
 			allFilled := true
-			for col := leftX + 1; col < rightX; col++ {
+			for col := leftGrid.leftX + 1; col < leftGrid.rightX; col++ {
 				filled := g.block[row][col].filled
 				if !filled {
 					allFilled = false
@@ -309,59 +327,6 @@ func removeBlock(g *game) {
 			break
 		}
 	}
-}
-
-func drawTopLine() {
-	colorDefault := termbox.ColorDefault
-	for i := leftX; i <= rightX; i++ {
-		var c rune
-		if i == leftX {
-			c = '\u250c'
-		} else if i == rightX {
-			c = '\u2510'
-		} else {
-			c = '\u2500'
-		}
-		termbox.SetCell(i, leftY, c, colorDefault, colorDefault)
-	}
-}
-
-func drawLeftLine() {
-	colorDefault := termbox.ColorDefault
-	for i := leftY + 1; i <= rightY; i++ {
-		c := '\u2502'
-		termbox.SetCell(leftX, i, c, colorDefault, colorDefault)
-	}
-}
-
-func drawBottomLine() {
-	colorDefault := termbox.ColorDefault
-	for i := leftX; i <= rightX; i++ {
-		var c rune
-		if i == leftX {
-			c = '\u2514'
-		} else if i == rightX {
-			c = '\u2518'
-		} else {
-			c = '\u2500'
-		}
-		termbox.SetCell(i, rightY, c, colorDefault, colorDefault)
-	}
-}
-
-func drawRightLine() {
-	colorDefault := termbox.ColorDefault
-	for i := leftY + 1; i <= rightY; i++ {
-		c := '\u2502'
-		termbox.SetCell(rightX, i, c, colorDefault, colorDefault)
-	}
-}
-
-func drawGrid() {
-	drawTopLine()
-	drawLeftLine()
-	drawRightLine()
-	drawBottomLine()
 }
 
 func drawNewBlock(g *game) {
@@ -401,20 +366,187 @@ func drawBlock(g *game) {
 	}
 }
 
+func drawText(x, y int, text string) {
+	colorDefault := termbox.ColorDefault
+	for _, ch := range text {
+		termbox.SetCell(x, y, ch, colorDefault, colorDefault)
+		x++
+	}
+}
+
+func drawLeftGridTopLine() {
+	colorDefault := termbox.ColorDefault
+	for i := leftGrid.leftX; i <= leftGrid.rightX; i++ {
+		var c rune
+		if i == leftGrid.leftX {
+			c = '\u250c'
+		} else if i == leftGrid.rightX {
+			c = '\u2510'
+		} else {
+			c = '\u2500'
+		}
+		termbox.SetCell(i, leftGrid.leftY, c, colorDefault, colorDefault)
+	}
+}
+
+func drawLeftGridLeftLine() {
+	colorDefault := termbox.ColorDefault
+	for i := leftGrid.leftY + 1; i <= leftGrid.rightY; i++ {
+		c := '\u2502'
+		termbox.SetCell(leftGrid.leftX, i, c, colorDefault, colorDefault)
+	}
+}
+
+func drawLeftGridRightLine() {
+	colorDefault := termbox.ColorDefault
+	for i := leftGrid.leftY + 1; i <= leftGrid.rightY; i++ {
+		c := '\u2502'
+		termbox.SetCell(leftGrid.rightX, i, c, colorDefault, colorDefault)
+	}
+}
+
+func drawLeftGridBottomLine() {
+	colorDefault := termbox.ColorDefault
+	for i := leftGrid.leftX; i <= leftGrid.rightX; i++ {
+		var c rune
+		if i == leftGrid.leftX {
+			c = '\u2514'
+		} else if i == leftGrid.rightX {
+			c = '\u2518'
+		} else {
+			c = '\u2500'
+		}
+		termbox.SetCell(i, leftGrid.rightY, c, colorDefault, colorDefault)
+	}
+}
+
+func drawLeftGrid() {
+	drawLeftGridTopLine()
+	drawLeftGridLeftLine()
+	drawLeftGridRightLine()
+	drawLeftGridBottomLine()
+}
+
+func drawRightGridTopLine() {
+	colorDefault := termbox.ColorDefault
+	for i := rightGrid.leftX; i <= rightGrid.rightX; i++ {
+		var c rune
+		if i == rightGrid.leftX {
+			c = '\u252c'
+		} else if i == rightGrid.rightX {
+			c = '\u2510'
+		} else {
+			c = '\u2500'
+		}
+		termbox.SetCell(i, rightGrid.leftY, c, colorDefault, colorDefault)
+	}
+}
+
+func drawRightGridRightLine() {
+	colorDefault := termbox.ColorDefault
+	for i := rightGrid.leftY + 1; i <= rightGrid.rightY; i++ {
+		c := '\u2502'
+		termbox.SetCell(rightGrid.rightX, i, c, colorDefault, colorDefault)
+	}
+}
+
+func drawRightGridBottomLine() {
+	colorDefault := termbox.ColorDefault
+	for i := rightGrid.leftX; i <= rightGrid.rightX; i++ {
+		var c rune
+		if i == rightGrid.leftX {
+			c = '\u2534'
+		} else if i == rightGrid.rightX {
+			c = '\u2518'
+		} else {
+			c = '\u2500'
+		}
+		termbox.SetCell(i, rightGrid.rightY, c, colorDefault, colorDefault)
+	}
+}
+
+func drawLevel(level int) {
+	x := rightGrid.leftX + 2
+	drawText(x, 1, fmt.Sprintf("Level : %d", level))
+}
+
+func drawScore(score int) {
+	x := rightGrid.leftX + 2
+	drawText(x, 2, fmt.Sprintf("Score : %d", score))
+}
+
+func drawSeparator1() {
+	colorDefault := termbox.ColorDefault
+	for i := rightGrid.leftX; i <= rightGrid.rightX; i++ {
+		var c rune
+		if i == rightGrid.leftX {
+			c = '\u251C'
+		} else if i == rightGrid.rightX {
+			c = '\u2524'
+		} else {
+			c = '\u2500'
+		}
+		termbox.SetCell(i, 3, c, colorDefault, colorDefault)
+	}
+}
+
+func drawControls() {
+	x := rightGrid.leftX + 2
+	drawText(x, 4, "Move left  : \u2190")
+	drawText(x, 5, "Move right : \u2192")
+	drawText(x, 6, "Move down  : \u2193")
+	drawText(x, 7, "Rotate     : Spacebar")
+	drawText(x, 8, "Exit       : Esc")
+}
+
+func drawSeparator2() {
+	colorDefault := termbox.ColorDefault
+	for i := rightGrid.leftX; i <= rightGrid.rightX; i++ {
+		var c rune
+		if i == rightGrid.leftX {
+			c = '\u251C'
+		} else if i == rightGrid.rightX {
+			c = '\u2524'
+		} else {
+			c = '\u2500'
+		}
+		termbox.SetCell(i, 18, c, colorDefault, colorDefault)
+	}
+}
+
+func drawAuthor() {
+	x := rightGrid.leftX + 2
+	drawText(x, 19, fmt.Sprintf("Author : %s", author))
+}
+
+func drawRightGrid() {
+	drawRightGridTopLine()
+	drawRightGridRightLine()
+	drawRightGridBottomLine()
+
+	drawLevel(1)
+	drawScore(0)
+	drawSeparator1()
+	drawControls()
+	drawSeparator2()
+	drawAuthor()
+}
+
 func redrawAll(game *game) {
 	colorDefault := termbox.ColorDefault
 	termbox.Clear(colorDefault, colorDefault)
 
 	drawBlock(game)
 	drawNewBlock(game)
-	drawGrid()
+
+	drawLeftGrid()
+	drawRightGrid()
 
 	termbox.Flush()
 }
 
 func createNewBlock() block {
-	//shape := shapes[rand.Int31n(numShapes)]
-	shape := shapes[0]
+	shape := shapes[rand.Int31n(numShapes)]
 	// create a copy
 	newBlock := block{}
 	for row := 0; row < len(shape); row++ {
@@ -431,10 +563,9 @@ func createNewBlock() block {
 
 func initBlock() block {
 	block := block{}
-	// TODO:
-	for row := 0; row <= 30; row++ {
+	for row := 0; row <= maxRow; row++ {
 		block = append(block, []coordinate{})
-		for col := 0; col <= 30; col++ {
+		for col := 0; col <= maxCol; col++ {
 			block[row] = append(block[row], coordinate{
 				x:      col,
 				y:      row,
