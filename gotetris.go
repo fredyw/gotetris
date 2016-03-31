@@ -42,7 +42,7 @@ const (
 	xStep     int    = 2
 	yStep     int    = 1
 	numShapes int32  = 7
-	maxLevel int = 9
+	maxLevel  int    = 9
 	maxRow    int    = 25
 	maxCol    int    = 25
 )
@@ -59,7 +59,7 @@ var (
 	rightGrid grid = grid{
 		leftX:  leftGrid.rightX,
 		leftY:  leftGrid.leftY,
-		rightX: 46,
+		rightX: 50,
 		rightY: leftGrid.rightY,
 	}
 	shapes []block = []block{
@@ -476,11 +476,6 @@ func drawLevel(level int) {
 	drawText(x, 1, fmt.Sprintf("Level : %d", level))
 }
 
-func drawScore(score int) {
-	x := rightGrid.leftX + 2
-	drawText(x, 2, fmt.Sprintf("Score : %d", score))
-}
-
 func drawSeparator1() {
 	colorDefault := termbox.ColorDefault
 	for i := rightGrid.leftX; i <= rightGrid.rightX; i++ {
@@ -492,20 +487,40 @@ func drawSeparator1() {
 		} else {
 			c = '\u2500'
 		}
-		termbox.SetCell(i, 3, c, colorDefault, colorDefault)
+		termbox.SetCell(i, 2, c, colorDefault, colorDefault)
+	}
+}
+
+func drawScore(score int) {
+	x := rightGrid.leftX + 2
+	drawText(x, 3, fmt.Sprintf("Score : %d", score))
+}
+
+func drawSeparator2() {
+	colorDefault := termbox.ColorDefault
+	for i := rightGrid.leftX; i <= rightGrid.rightX; i++ {
+		var c rune
+		if i == rightGrid.leftX {
+			c = '\u251C'
+		} else if i == rightGrid.rightX {
+			c = '\u2524'
+		} else {
+			c = '\u2500'
+		}
+		termbox.SetCell(i, 4, c, colorDefault, colorDefault)
 	}
 }
 
 func drawControls() {
 	x := rightGrid.leftX + 2
-	drawText(x, 4, "Move left  : \u2190")
-	drawText(x, 5, "Move right : \u2192")
-	drawText(x, 6, "Move down  : \u2193")
-	drawText(x, 7, "Rotate     : Spacebar")
-	drawText(x, 8, "Exit       : Esc")
+	drawText(x, 5, "Move left  : \u2190")
+	drawText(x, 6, "Move right : \u2192")
+	drawText(x, 7, "Move down  : \u2193")
+	drawText(x, 8, "Rotate     : Spacebar")
+	drawText(x, 9, "Exit       : Esc")
 }
 
-func drawSeparator2() {
+func drawSeparator3() {
 	colorDefault := termbox.ColorDefault
 	for i := rightGrid.leftX; i <= rightGrid.rightX; i++ {
 		var c rune
@@ -522,7 +537,7 @@ func drawSeparator2() {
 
 func drawAuthor() {
 	x := rightGrid.leftX + 2
-	drawText(x, 19, fmt.Sprintf("Author : %s", author))
+	drawText(x, 19, fmt.Sprintf("Created By : %s", author))
 }
 
 func drawRightGrid(game *game) {
@@ -531,10 +546,11 @@ func drawRightGrid(game *game) {
 	drawRightGridBottomLine()
 
 	drawLevel(1)
-	drawScore(game.score)
 	drawSeparator1()
-	drawControls()
+	drawScore(game.score)
 	drawSeparator2()
+	drawControls()
+	drawSeparator3()
 	drawAuthor()
 }
 
