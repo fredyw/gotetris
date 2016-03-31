@@ -42,6 +42,7 @@ const (
 	xStep     int    = 2
 	yStep     int    = 1
 	numShapes int32  = 7
+	maxLevel int = 9
 	maxRow    int    = 25
 	maxCol    int    = 25
 )
@@ -151,6 +152,7 @@ type coordinate struct {
 type game struct {
 	newBlock block
 	block    block
+	score    int
 }
 
 func (g *game) moveLeft() {
@@ -317,6 +319,7 @@ func removeBlock(g *game) {
 			}
 		}
 		if len(rows) > 0 {
+			g.score += 10
 			lastRow := rows[len(rows)-1]
 			for row := lastRow; row > 0; row-- {
 				for col := 0; col < len(g.block[row]); col++ {
@@ -420,7 +423,10 @@ func drawLeftGridBottomLine() {
 	}
 }
 
-func drawLeftGrid() {
+func drawLeftGrid(game *game) {
+	drawBlock(game)
+	drawNewBlock(game)
+
 	drawLeftGridTopLine()
 	drawLeftGridLeftLine()
 	drawLeftGridRightLine()
@@ -519,13 +525,13 @@ func drawAuthor() {
 	drawText(x, 19, fmt.Sprintf("Author : %s", author))
 }
 
-func drawRightGrid() {
+func drawRightGrid(game *game) {
 	drawRightGridTopLine()
 	drawRightGridRightLine()
 	drawRightGridBottomLine()
 
 	drawLevel(1)
-	drawScore(0)
+	drawScore(game.score)
 	drawSeparator1()
 	drawControls()
 	drawSeparator2()
@@ -536,11 +542,8 @@ func redrawAll(game *game) {
 	colorDefault := termbox.ColorDefault
 	termbox.Clear(colorDefault, colorDefault)
 
-	drawBlock(game)
-	drawNewBlock(game)
-
-	drawLeftGrid()
-	drawRightGrid()
+	drawLeftGrid(game)
+	drawRightGrid(game)
 
 	termbox.Flush()
 }
