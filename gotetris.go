@@ -39,8 +39,8 @@ const (
 	reqScore     int           = 10
 	nextScore    int           = 10
 	maxScore     int           = 10
-	maxRow       int           = 25
-	maxCol       int           = 25
+	maxRow       int           = 30
+	maxCol       int           = 30
 	lost         status        = 1
 	won          status        = 2
 	playing      status        = 3
