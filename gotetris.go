@@ -31,16 +31,18 @@ import (
 )
 
 const (
-	author    string = "Fredy Wijaya"
-	xStep     int    = 2
-	yStep     int    = 1
-	numShapes int32  = 7
-	maxLevel  int    = 9
-	maxRow    int    = 25
-	maxCol    int    = 25
-	lost      status = 1
-	won       status = 2
-	playing   status = 3
+	author       string        = "Fredy Wijaya"
+	xStep        int           = 2
+	yStep        int           = 1
+	numShapes    int32         = 7
+	maxLevel     int           = 10
+	maxRow       int           = 25
+	maxCol       int           = 25
+	lost         status        = 1
+	won          status        = 2
+	playing      status        = 3
+	initialSpeed time.Duration = 680
+	speedStep    time.Duration = 60
 )
 
 type status int
@@ -158,6 +160,7 @@ type game struct {
 	block    block
 	score    int
 	status   status
+	speed    time.Duration
 }
 
 func (g *game) moveLeft() {
@@ -306,6 +309,30 @@ func (g *game) rotate() {
 		g.newBlock = oldBlock
 	}
 	removeBlock(g)
+}
+
+func (g *game) run() {
+	g.moveDown()
+	// check for collison
+	collision := false
+	for row := 0; row < len(g.newBlock); row++ {
+		for col := 0; col < len(g.newBlock[row]); col++ {
+			if g.newBlock[row][col].y >= leftGrid.rightY && g.newBlock[row][col].filled {
+				collision = true
+			} else {
+				x := g.newBlock[row][col].x
+				y := g.newBlock[row][col].y
+				if x >= 0 && g.block[y][x].filled && g.block[y][x].filled == g.newBlock[row][col].filled {
+					collision = true
+				}
+			}
+		}
+	}
+	if collision {
+		g.status = lost
+	} else {
+		g.status = playing
+	}
 }
 
 func removeBlock(g *game) {
@@ -544,9 +571,9 @@ func drawGameStatus(status status) {
 	x := rightGrid.leftX + 2
 	text := ""
 	if status == lost {
-		text = "You lost!"
+		text = "YOU LOST!"
 	} else if status == won {
-		text = "You won!"
+		text = "YOU WON!"
 	}
 	drawText(x, 11, fmt.Sprintf("%s", text))
 }
@@ -647,28 +674,50 @@ func runGame() {
 	game := &game{
 		newBlock: createNewBlock(),
 		block:    initBlock(),
+		speed:    initialSpeed,
 	}
+	ticker := time.NewTicker(game.speed * time.Millisecond)
+	gameDone := false
 
 	redrawAll(game)
+
 exitGame:
 	for {
+		select {
+		case ev := <-eventQueue:
+			switch ev.Key {
+			case termbox.KeyEsc:
+				break exitGame
+			case termbox.KeyArrowLeft:
+				game.moveLeft()
+			case termbox.KeyArrowRight:
+				game.moveRight()
+			case termbox.KeyArrowDown:
+				game.moveDown()
+			case termbox.KeySpace:
+				game.rotate()
+			}
+		case <-ticker.C:
+			game.run()
+			if game.status == lost {
+				gameDone = true
+				break exitGame
+			}
+		}
+		redrawAll(game)
+	}
+
+	if gameDone {
+		redrawAll(game)
+	quit:
 		for {
-			select {
-			case ev := <-eventQueue:
+			switch ev := termbox.PollEvent(); ev.Type {
+			case termbox.EventKey:
 				switch ev.Key {
 				case termbox.KeyEsc:
-					break exitGame
-				case termbox.KeyArrowLeft:
-					game.moveLeft()
-				case termbox.KeyArrowRight:
-					game.moveRight()
-				case termbox.KeyArrowDown:
-					game.moveDown()
-				case termbox.KeySpace:
-					game.rotate()
+					break quit
 				}
 			}
-			redrawAll(game)
 		}
 	}
 }
