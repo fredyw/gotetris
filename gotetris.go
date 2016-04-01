@@ -36,6 +36,9 @@ const (
 	yStep        int           = 1
 	numShapes    int32         = 7
 	maxLevel     int           = 10
+	reqScore     int           = 10
+	nextScore    int           = 10
+	maxScore     int           = 10
 	maxRow       int           = 25
 	maxCol       int           = 25
 	lost         status        = 1
@@ -161,6 +164,7 @@ type game struct {
 	score    int
 	status   status
 	speed    time.Duration
+	level    int
 }
 
 func (g *game) moveLeft() {
@@ -332,6 +336,12 @@ func (g *game) run() {
 		g.status = lost
 	} else {
 		g.status = playing
+		// TODO
+		//if g.score == maxScore {
+		//	g.status = won
+		//} else {
+		//	g.status = playing
+		//}
 	}
 }
 
@@ -351,7 +361,7 @@ func removeBlock(g *game) {
 			}
 		}
 		if len(rows) > 0 {
-			g.score += 10
+			g.score += nextScore
 			lastRow := rows[len(rows)-1]
 			for row := lastRow; row > 0; row-- {
 				for col := 0; col < len(g.block[row]); col++ {
@@ -603,7 +613,7 @@ func drawRightGrid(game *game) {
 	drawRightGridRightLine()
 	drawRightGridBottomLine()
 
-	drawLevel(1)
+	drawLevel(game.level)
 	drawSeparator1()
 	drawScore(game.score)
 	drawSeparator2()
@@ -675,6 +685,7 @@ func runGame() {
 		newBlock: createNewBlock(),
 		block:    initBlock(),
 		speed:    initialSpeed,
+		level:    1,
 	}
 	ticker := time.NewTicker(game.speed * time.Millisecond)
 	gameDone := false
@@ -699,7 +710,7 @@ exitGame:
 			}
 		case <-ticker.C:
 			game.run()
-			if game.status == lost {
+			if game.status == won || game.status == lost {
 				gameDone = true
 				break exitGame
 			}
