@@ -703,7 +703,6 @@ exitGame:
 	for {
 		ticker := time.NewTicker(game.speed * time.Millisecond)
 		redrawAll(game)
-
 	nextLevel:
 		for {
 			select {
