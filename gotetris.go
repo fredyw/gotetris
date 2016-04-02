@@ -31,21 +31,24 @@ import (
 )
 
 const (
-	author       string        = "Fredy Wijaya"
-	xStep        int           = 2
-	yStep        int           = 1
-	numShapes    int32         = 7
-	maxLevel     int           = 10
-	reqScore     int           = 10
-	nextScore    int           = 10
-	maxScore     int           = 10
-	maxRow       int           = 30
-	maxCol       int           = 30
-	lost         status        = 1
-	won          status        = 2
-	playing      status        = 3
-	initialSpeed time.Duration = 680
-	speedStep    time.Duration = 60
+	author          string        = "Fredy Wijaya"
+	xStep           int           = 2
+	yStep           int           = 1
+	numShapes       int32         = 7
+	maxLevel        int           = 10
+	numReqToLevelUp int           = 30
+	incrementScore  int           = 10
+	nextScore       int           = incrementScore * numReqToLevelUp
+	maxScore        int           = nextScore * maxLevel
+	maxRow          int           = 30
+	maxCol          int           = 30
+	lost            status        = 1
+	won             status        = 2
+	levelUp         status        = 3
+	initialLevel    int           = 1
+	initialScore    int           = 0
+	initialSpeed    time.Duration = 680
+	speedStep       time.Duration = 60
 )
 
 type status int
@@ -159,12 +162,13 @@ type coordinate struct {
 }
 
 type game struct {
-	newBlock block
-	block    block
-	score    int
-	status   status
-	speed    time.Duration
-	level    int
+	newBlock     block
+	block        block
+	currentScore int
+	nextScore    int
+	status       status
+	speed        time.Duration
+	level        int
 }
 
 func (g *game) moveLeft() {
@@ -335,13 +339,16 @@ func (g *game) run() {
 	if collision {
 		g.status = lost
 	} else {
-		g.status = playing
-		// TODO
-		//if g.score == maxScore {
-		//	g.status = won
-		//} else {
-		//	g.status = playing
-		//}
+		if g.currentScore == maxScore {
+			g.status = won
+		} else {
+			if g.currentScore >= g.nextScore {
+				g.nextScore += incrementScore * numReqToLevelUp
+				g.level++
+				g.speed -= speedStep
+			}
+			g.status = levelUp
+		}
 	}
 }
 
@@ -361,7 +368,7 @@ func removeBlock(g *game) {
 			}
 		}
 		if len(rows) > 0 {
-			g.score += nextScore
+			g.currentScore += incrementScore
 			lastRow := rows[len(rows)-1]
 			for row := lastRow; row > 0; row-- {
 				for col := 0; col < len(g.block[row]); col++ {
@@ -615,7 +622,7 @@ func drawRightGrid(game *game) {
 
 	drawLevel(game.level)
 	drawSeparator1()
-	drawScore(game.score)
+	drawScore(game.currentScore)
 	drawSeparator2()
 	drawControls()
 	drawSeparator3()
@@ -682,42 +689,49 @@ func runGame() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	game := &game{
-		newBlock: createNewBlock(),
-		block:    initBlock(),
-		speed:    initialSpeed,
-		level:    1,
+		newBlock:     createNewBlock(),
+		block:        initBlock(),
+		speed:        initialSpeed,
+		level:        initialLevel,
+		currentScore: initialScore,
+		nextScore:    incrementScore * numReqToLevelUp,
 	}
-	ticker := time.NewTicker(game.speed * time.Millisecond)
-	gameDone := false
 
-	redrawAll(game)
+	gameDone := false
 
 exitGame:
 	for {
-		select {
-		case ev := <-eventQueue:
-			switch ev.Key {
-			case termbox.KeyEsc:
-				break exitGame
-			case termbox.KeyArrowLeft:
-				game.moveLeft()
-			case termbox.KeyArrowRight:
-				game.moveRight()
-			case termbox.KeyArrowDown:
-				game.moveDown()
-			case termbox.KeySpace:
-				game.rotate()
-			}
-		case <-ticker.C:
-			game.run()
-			if game.status == won || game.status == lost {
-				gameDone = true
-				break exitGame
-			}
-		}
+		ticker := time.NewTicker(game.speed * time.Millisecond)
 		redrawAll(game)
-	}
 
+	nextLevel:
+		for {
+			select {
+			case ev := <-eventQueue:
+				switch ev.Key {
+				case termbox.KeyEsc:
+					break exitGame
+				case termbox.KeyArrowLeft:
+					game.moveLeft()
+				case termbox.KeyArrowRight:
+					game.moveRight()
+				case termbox.KeyArrowDown:
+					game.moveDown()
+				case termbox.KeySpace:
+					game.rotate()
+				}
+			case <-ticker.C:
+				game.run()
+				if game.status == won || game.status == lost {
+					gameDone = true
+					break exitGame
+				} else if game.status == levelUp {
+					break nextLevel
+				}
+			}
+			redrawAll(game)
+		}
+	}
 	if gameDone {
 		redrawAll(game)
 	quit:
