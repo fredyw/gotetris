@@ -24,10 +24,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/nsf/termbox-go"
 	"math/rand"
 	"os"
 	"time"
+
+	"github.com/nsf/termbox-go"
 )
 
 const (
@@ -62,19 +63,19 @@ type grid struct {
 }
 
 var (
-	leftGrid grid = grid{
+	leftGrid = grid{
 		leftX:  1,
 		leftY:  0,
 		rightX: 22,
 		rightY: 20,
 	}
-	rightGrid grid = grid{
+	rightGrid = grid{
 		leftX:  leftGrid.rightX,
 		leftY:  leftGrid.leftY,
 		rightX: 50,
 		rightY: leftGrid.rightY,
 	}
-	shapes []block = []block{
+	shapes = []block{
 		{
 			{
 				{1, 8, false}, {1, 10, false}, {1, 12, false}, {1, 14, false},
