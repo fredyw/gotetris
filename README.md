@@ -1,5 +1,5 @@
 # gotetris
-A CLI Tetris game written in Go
+A CLI Tetris game written in Go.
 
 ### Installation
     go get -u github.com/fredyw/gotetris
